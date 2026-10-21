@@ -1,0 +1,17 @@
+map_id,source_table,source_field,source_type,target_table,target_field,target_type,transformation_rule,required,validation_check,check_id
+M01,hcm_employees,person_id,VARCHAR(10),payroll_employees,source_person_id,VARCHAR(10),Direct copy; key that links the two systems,Y,Every HCM person has exactly one payroll record,C01
+M02,hcm_employees,(generated),—,payroll_employees,payroll_id,VARCHAR(10),Assigned by payroll at first replication; a rehire must reuse the existing payroll_id,Y,One payroll_id per national_id,C02
+M03,hcm_employees,national_id,VARCHAR(12),payroll_employees,national_id,VARCHAR(12),Direct copy,Y,Matches source; used to detect duplicate people,C02
+M04,hcm_employees,"first_name, last_name",VARCHAR(40),payroll_employees,full_name,VARCHAR(90),"Concatenate as ""last_name, first_name""",Y,Not blank,C07
+M05,hcm_employees,hire_date,DATE,payroll_employees,hire_date,DATE,Direct copy; corrections in HCM must re-replicate,Y,Equal to source,C06
+M06,hcm_employees,hire_action,VARCHAR(10),payroll_employees,(drives payroll_id logic),—,REHIRE reuses prior payroll_id; HIRE creates a new one,Y,No second payroll_id for a REHIRE,C02
+M07,hcm_employees,employment_status,VARCHAR(12),payroll_employees,emp_status,CHAR(1),ACTIVE → A; TERMINATED → W,Y,Value-mapped status matches source,C09
+M08,hcm_employees,pay_basis,VARCHAR(10),payroll_employees,pay_basis,CHAR(1),HOURLY → H; SALARIED → S,Y,Value-mapped basis matches source,C03
+M09,hcm_employees,comp_amount (HOURLY),"DECIMAL(12,2)",payroll_employees,hourly_rate,"DECIMAL(12,2)",Direct copy when pay_basis = HOURLY,Y,Hourly rate between 10 and 150,C03
+M10,hcm_employees,comp_amount,"DECIMAL(12,2)",payroll_employees,annual_salary,"DECIMAL(12,2)",SALARIED: copy comp_amount. HOURLY: comp_amount × 2080 × fte,Y,Within 1.00 of the derived value,C08
+M11,hcm_employees,fte,"DECIMAL(3,2)",payroll_employees,fte,"DECIMAL(3,2)",Direct copy,Y,Equal to source,C08
+M12,hcm_employees,country,CHAR(2),payroll_employees,country,CHAR(2),Direct copy (ISO 3166 alpha-2),Y,Equal to source,C04
+M13,hcm_employees,region,VARCHAR(30),payroll_employees,state / province,VARCHAR(30),country = US → state; otherwise → province (state left blank),Y,Non-US records have blank state and populated province where source region exists,C04
+M14,hcm_employees,postal_code,VARCHAR(10),payroll_employees,postal_code,VARCHAR(10),Direct copy,Y,Equal to source,C04
+M15,hcm_employees,bank_ref,VARCHAR(12),payroll_employees,bank_ref,VARCHAR(12),Direct copy; HCM is system of record for bank details,Y,Not blank for active employees,C05
+M16,hcm_employees,department,VARCHAR(30),payroll_employees,(not mapped),—,Not replicated; payroll does not use department,N,None,—

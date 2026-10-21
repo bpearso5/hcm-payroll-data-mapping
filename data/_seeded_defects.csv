@@ -1,0 +1,29 @@
+defect_type,person_id,note
+MISSING_IN_TARGET,P100039,Record never replicated to payroll
+MISSING_IN_TARGET,P100181,Record never replicated to payroll
+MISSING_IN_TARGET,P100114,Record never replicated to payroll
+MISSING_IN_TARGET,P100178,Record never replicated to payroll
+DUPLICATE_PERSON,P100088,Rehire created a second payroll ID
+DUPLICATE_PERSON,P100151,Rehire created a second payroll ID
+DUPLICATE_PERSON,P100108,Rehire created a second payroll ID
+COMP_OUT_OF_RANGE,P100220,Annual figure entered as hourly rate
+COMP_OUT_OF_RANGE,P100012,Annual figure entered as hourly rate
+COMP_OUT_OF_RANGE,P100051,Annual figure entered as hourly rate
+ADDRESS_MAPPING,P100135,Foreign region mapped to US state field
+ADDRESS_MAPPING,P100217,Foreign region mapped to US state field
+ADDRESS_MAPPING,P100154,Foreign region mapped to US state field
+MISSING_BANK,P100170,Bank reference blank in payroll
+MISSING_BANK,P100003,Bank reference blank in payroll
+MISSING_BANK,P100162,Bank reference blank in payroll
+MISSING_BANK,P100122,Bank reference blank in payroll
+HIRE_DATE_MISMATCH,P100085,Source date corrected; target not updated
+HIRE_DATE_MISMATCH,P100049,Source date corrected; target not updated
+HIRE_DATE_MISMATCH,P100168,Source date corrected; target not updated
+MISSING_NAME,P100145,Name dropped during replication
+MISSING_NAME,P100143,Name dropped during replication
+FTE_COMP_MISMATCH,P100061,FTE changed; target salary not prorated
+FTE_COMP_MISMATCH,P100146,FTE changed; target salary not prorated
+FTE_COMP_MISMATCH,P100092,FTE changed; target salary not prorated
+STATUS_MISMATCH,P100022,"Active in HCM, withdrawn in payroll"
+STATUS_MISMATCH,P100173,"Active in HCM, withdrawn in payroll"
+STATUS_MISMATCH,P100009,"Active in HCM, withdrawn in payroll"
