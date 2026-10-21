@@ -76,6 +76,12 @@ The SQL is written to run unchanged in **MySQL 8** and **SQLite 3**. For MySQL, 
 | Excel | Workbook with filters, frozen headers, a status dropdown, and COUNTIF summaries |
 | Testing my own work | `data/_seeded_defects.csv` is an answer key; the checks are verified against it |
 
+
+## How this was built
+
+The problem, the defect types, and the workflow come from my own experience tracking data issues on an HR system go-live. I used Claude (Anthropic’s AI assistant) to help generate the synthetic data, draft the SQL, and structure the documentation. I reviewed, ran, and tested everything here, and I can walk through any query and the reasoning behind each check.
+
+
 ## About me
 
 I'm Brystal Pearson, CAPM. I work at the intersection of data and delivery: implementation support, data governance, and the reporting that keeps leadership informed. I'm completing a BBA in Management Information Systems at the University of Memphis.
