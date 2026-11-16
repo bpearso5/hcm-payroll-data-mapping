@@ -8,3 +8,5 @@ C06,Hire date mismatch,Medium,3
 C07,Missing name,Low,2
 C08,Salary mismatch,High,3
 C09,Status mismatch,High,3
+C10,Orphan in target,High,0
+C11,Copied field mismatch,Medium,0

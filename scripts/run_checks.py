@@ -1,6 +1,8 @@
 """
 Load the CSVs into SQLite, run every check in sql/02_integrity_checks.sql,
-and write results/defect_log.csv plus a per-check summary.
+and write results/defect_log.csv plus a per-check summary. Then compare the
+flagged records to the answer key in data/_seeded_defects.csv and exit non-zero
+if any seeded defect was missed or any unseeded record was flagged.
 
 The SQL is portable; to run it in MySQL instead, execute sql/01_schema.sql,
 load the two CSVs with LOAD DATA (or the MySQL Workbench import wizard),
@@ -9,6 +11,7 @@ then run sql/02_integrity_checks.sql.
 import csv
 import re
 import sqlite3
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,9 +22,17 @@ CHECK_NAMES = {
     "C01": "Missing in target", "C02": "Duplicate person", "C03": "Hourly rate out of range",
     "C04": "Address mapping", "C05": "Missing bank", "C06": "Hire date mismatch",
     "C07": "Missing name", "C08": "Salary mismatch", "C09": "Status mismatch",
+    "C10": "Orphan in target", "C11": "Copied field mismatch",
 }
 SEVERITY = {"C01": "High", "C02": "High", "C03": "High", "C05": "High",
-            "C08": "High", "C09": "High", "C04": "Medium", "C06": "Medium", "C07": "Low"}
+            "C08": "High", "C09": "High", "C10": "High",
+            "C04": "Medium", "C06": "Medium", "C11": "Medium", "C07": "Low"}
+# Which check is expected to catch each seeded defect type in data/_seeded_defects.csv.
+EXPECTED_CHECK = {
+    "MISSING_IN_TARGET": "C01", "DUPLICATE_PERSON": "C02", "COMP_OUT_OF_RANGE": "C03",
+    "ADDRESS_MAPPING": "C04", "MISSING_BANK": "C05", "HIRE_DATE_MISMATCH": "C06",
+    "MISSING_NAME": "C07", "FTE_COMP_MISMATCH": "C08", "STATUS_MISMATCH": "C09",
+}
 NUMERIC = {"comp_amount", "fte", "annual_salary", "hourly_rate"}
 
 con = sqlite3.connect(":memory:")
@@ -67,3 +78,16 @@ with open(RESULTS / "check_summary.csv", "w", newline="") as f:
 for s in summary:
     print(f"{s[0]}  {s[1]:<26} {s[2]:<7} {s[3]}")
 print(f"Total defect rows: {len(log)}")
+
+# Verify against the answer key: every seeded defect caught by its check, nothing else flagged.
+with open(ROOT / "data/_seeded_defects.csv", newline="") as f:
+    expected = {(EXPECTED_CHECK[r["defect_type"]], r["person_id"]) for r in csv.DictReader(f)}
+found = {(d["check_id"], d["person_id"]) for d in log}
+missed, unexpected = sorted(expected - found), sorted(found - expected)
+for check_id, person_id in missed:
+    print(f"MISSED      {check_id} {person_id}: seeded defect was not flagged")
+for check_id, person_id in unexpected:
+    print(f"UNEXPECTED  {check_id} {person_id}: flagged but not in the answer key")
+if missed or unexpected:
+    sys.exit("Answer-key verification FAILED")
+print(f"Answer-key verification passed: {len(expected)} seeded defects found, nothing else flagged")

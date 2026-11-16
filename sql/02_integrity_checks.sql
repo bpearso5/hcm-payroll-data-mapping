@@ -1,4 +1,5 @@
 -- Integrity checks: one query per check ID in mapping/source_to_target_mapping.csv.
+-- Comparisons are NULL-safe: a NULL in the target is flagged, not silently skipped.
 -- Each returns: check_id, person_id, payroll_id, field, source_value, target_value.
 -- Portable SQL: runs unchanged in MySQL 8 and SQLite 3.
 -- scripts/run_checks.py runs each block (separated by "-- @check") and writes results/defect_log.csv.
@@ -27,7 +28,7 @@ SELECT 'C03' AS check_id, p.source_person_id AS person_id, p.payroll_id,
 FROM payroll_employees p
 JOIN hcm_employees h ON h.person_id = p.source_person_id
 WHERE p.pay_basis = 'H'
-  AND (p.hourly_rate < 10 OR p.hourly_rate > 150);
+  AND (p.hourly_rate IS NULL OR p.hourly_rate < 10 OR p.hourly_rate > 150);
 
 -- @check C04 Non-US region mapped to the US state field
 SELECT 'C04' AS check_id, p.source_person_id AS person_id, p.payroll_id,
@@ -51,7 +52,7 @@ SELECT 'C06' AS check_id, p.source_person_id AS person_id, p.payroll_id,
        'hire_date' AS field, h.hire_date AS source_value, p.hire_date AS target_value
 FROM payroll_employees p
 JOIN hcm_employees h ON h.person_id = p.source_person_id
-WHERE h.hire_date <> p.hire_date;
+WHERE p.hire_date IS NULL OR h.hire_date <> p.hire_date;
 
 -- @check C07 Name missing in target
 SELECT 'C07' AS check_id, p.source_person_id AS person_id, p.payroll_id,
@@ -69,14 +70,54 @@ SELECT 'C08' AS check_id, p.source_person_id AS person_id, p.payroll_id,
        p.annual_salary AS target_value
 FROM payroll_employees p
 JOIN hcm_employees h ON h.person_id = p.source_person_id
-WHERE NOT (p.pay_basis = 'H' AND p.hourly_rate > 150)
-  AND ABS(p.annual_salary -
-          CASE WHEN h.pay_basis = 'HOURLY' THEN h.comp_amount * 2080 * h.fte
-               ELSE h.comp_amount END) > 1.00;
+WHERE NOT (COALESCE(p.pay_basis, '') = 'H' AND COALESCE(p.hourly_rate, 0) > 150)
+  AND (p.annual_salary IS NULL
+       OR ABS(p.annual_salary -
+              CASE WHEN h.pay_basis = 'HOURLY' THEN h.comp_amount * 2080 * h.fte
+                   ELSE h.comp_amount END) > 1.00);
 
 -- @check C09 Employment status out of sync
 SELECT 'C09' AS check_id, p.source_person_id AS person_id, p.payroll_id,
        'emp_status' AS field, h.employment_status AS source_value, p.emp_status AS target_value
 FROM payroll_employees p
 JOIN hcm_employees h ON h.person_id = p.source_person_id
-WHERE p.emp_status <> CASE h.employment_status WHEN 'ACTIVE' THEN 'A' ELSE 'W' END;
+WHERE COALESCE(p.emp_status, '') <> CASE h.employment_status WHEN 'ACTIVE' THEN 'A' ELSE 'W' END;
+
+-- @check C10 Payroll record with no matching HCM person (orphan in target)
+SELECT 'C10' AS check_id, p.source_person_id AS person_id, p.payroll_id,
+       'source_person_id' AS field, NULL AS source_value, p.source_person_id AS target_value
+FROM payroll_employees p
+LEFT JOIN hcm_employees h ON h.person_id = p.source_person_id
+WHERE h.person_id IS NULL;
+
+-- @check C11 Copied or value-mapped field does not match the source
+-- (national_id, pay_basis, fte, country, postal_code; one row per mismatched field)
+SELECT 'C11' AS check_id, p.source_person_id AS person_id, p.payroll_id,
+       'national_id' AS field, h.national_id AS source_value, p.national_id AS target_value
+FROM payroll_employees p
+JOIN hcm_employees h ON h.person_id = p.source_person_id
+WHERE COALESCE(p.national_id, '') <> h.national_id
+UNION ALL
+SELECT 'C11' AS check_id, p.source_person_id AS person_id, p.payroll_id,
+       'pay_basis' AS field, h.pay_basis AS source_value, p.pay_basis AS target_value
+FROM payroll_employees p
+JOIN hcm_employees h ON h.person_id = p.source_person_id
+WHERE COALESCE(p.pay_basis, '') <> CASE h.pay_basis WHEN 'HOURLY' THEN 'H' ELSE 'S' END
+UNION ALL
+SELECT 'C11' AS check_id, p.source_person_id AS person_id, p.payroll_id,
+       'fte' AS field, h.fte AS source_value, p.fte AS target_value
+FROM payroll_employees p
+JOIN hcm_employees h ON h.person_id = p.source_person_id
+WHERE p.fte IS NULL OR p.fte <> h.fte
+UNION ALL
+SELECT 'C11' AS check_id, p.source_person_id AS person_id, p.payroll_id,
+       'country' AS field, h.country AS source_value, p.country AS target_value
+FROM payroll_employees p
+JOIN hcm_employees h ON h.person_id = p.source_person_id
+WHERE COALESCE(p.country, '') <> h.country
+UNION ALL
+SELECT 'C11' AS check_id, p.source_person_id AS person_id, p.payroll_id,
+       'postal_code' AS field, h.postal_code AS source_value, p.postal_code AS target_value
+FROM payroll_employees p
+JOIN hcm_employees h ON h.person_id = p.source_person_id
+WHERE COALESCE(p.postal_code, '') <> COALESCE(h.postal_code, '');
