@@ -4,6 +4,14 @@ A rebuilt case study of the data work I did during an enterprise HR system go-li
 
 > **All data here is synthetic.** People, IDs, and values are invented, and national IDs use an `NID-` prefix so they can't be mistaken for real ones. No client data, files, or screenshots are included. The defect types are modeled on the kinds of issues I tracked in practice.
 
+## Preview
+
+The defect log the SQL checks produce: every flagged record, with the source and target values side by side.
+
+![Defect log: 31 flagged records across nine integrity checks, with source and target values](docs/images/defect_log.png)
+
+**[View every tab as a PDF](mapping/HCM_to_Payroll_Mapping_and_Defect_Log.pdf)** (mapping spec, defect log, summary; opens in the browser) · [Download the Excel file](mapping/HCM_to_Payroll_Mapping_and_Defect_Log.xlsx) to filter and update statuses
+
 ## The problem
 
 When an organization moves employee records into a new HR system, that system becomes the source of truth, and payroll receives its data through replication. If the field mapping is wrong, or a record is keyed incorrectly, the error lands in payroll: someone isn't paid, is paid twice, or gets a check mailed to an unformatted address.
@@ -18,6 +26,7 @@ This repo rebuilds that work at small scale so it can be shown.
 |---|---|
 | `mapping/source_to_target_mapping.csv` | Field-level mapping spec: 16 mappings, each with its transformation rule and validation check |
 | `mapping/HCM_to_Payroll_Mapping_and_Defect_Log.xlsx` | The mapping spec, defect log, and summary in one workbook, with filters and a status dropdown |
+| `mapping/HCM_to_Payroll_Mapping_and_Defect_Log.pdf` | Every tab as a PDF, viewable without Excel |
 | `sql/01_schema.sql` | Table definitions for the source (`hcm_employees`) and target (`payroll_employees`) |
 | `sql/02_integrity_checks.sql` | Nine SQL checks, one per validation rule |
 | `results/defect_log.csv` | Output of the checks: every flagged record with source and target values |
